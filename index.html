@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.2/font/bootstrap-icons.css");
+        *{
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+        body{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(#334770,#1a2338)
+        }
+        #image{
+            width: 200px;
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            margin: auto;
+        }
+        main{
+            width: fit-content;
+            box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+            padding:  10px 20px;
+            border-radius: 20px;
+            text-align: center;
+            background: linear-gradient(#738cbf,#5774b2,#3a507e);
+        }
+        #musicNumber,#songBy{
+            font-size: 0.8rem;
+        }
+        #songBy{
+            margin-top: 5px;
+        }
+        #songName{
+            font: 1.2rem monospace;
+            margin-bottom: 0;
+            font-weight: 800;
+        }
+        #timer{
+            width: 200px;
+        }
+        #time span{
+            font-size: 0.8rem;
+        }
+        #sound span{
+            font-size: 1rem;
+            user-select: none;
+        }
+        input[type=range]{
+            vertical-align: -10%;
+        }
+        #player{
+            margin: 20px;
+        }
+        #player span{
+            font-size: 2rem;
+            margin-right: 20px;
+            user-select: none;
+        }
+        #player:last-child{
+            margin-right: 0;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <p id="musicNumber">Playing music <span id="songNum"></span> of <span id="totalSongs"></span></p>
+        <div id="image"></div>
+        <p id="songName"></p>
+        <p id="songBy"></p>
+        <div id="time">
+            <span id="presentTime"><span id="pmin">00</span>:<span id="psec">00</span></span>
+            <input type="range" id="timer" min="0" max="10000" value="0">
+            <span id="totalTime"><span id="tmin">00</span>:<span id="tsec">00</span></span>
+        </div>
+        <div id="sound">
+            <span id="decrease"><i class="bi bi-volume-down-fill"></i></span>
+            <input type="range" id="soundSetter" min="0" max="10" value="7">
+            <span id="increase"><i class="bi bi-volume-up-fill"></i></span>
+        </div>
+        <div id="player">
+            <audio id="song"></audio>
+            <span><i id="shuffle" class="bi bi-shuffle"></i></span>
+            <span><i id="backward" class="bi bi-chevron-double-left"></i></span>
+            <span><i id="play" class="bi bi-play-circle-fill"></i></span>
+            <span><i id="forward" class="bi bi-chevron-double-right"></i></span>
+            <span><i id="replay" class="bi bi-arrow-clockwise"></i></span>
+    </main>
+    <script>
+        let songs = [
+            ['lovely.mp3','https://upload.wikimedia.org/wikipedia/en/f/fa/Billie_Eilish_and_Khalid_-_Lovely.png','Lovely','Billie Eilish'],
+            ["LoveMeLikeYouDo.mp3",'https://nadyaayuramadhani.files.wordpress.com/2015/09/love-me-like-you-do.jpg','Love Me Like You Do','Ellie Goulding'],
+            ['Senorita.mp3',"https://i.ytimg.com/vi/kSwDp2HagHM/maxresdefault.jpg","Senorita","Camila Cabello"],
+            ["GirlsLikeYou.mp3","https://m.media-amazon.com/images/M/MV5BNmNmNGExNDctM2Q3MC00MTU5LTkyYzMtMzMyYmI2MTA3MjU3XkEyXkFqcGdeQXVyNjE0ODc0MDc@._V1_.jpg","Girls Like You","Maroon 5"],
+            ["LoveStory.mp3","https://upload.wikimedia.org/wikipedia/en/0/01/Taylor_Swift_-_Love_Story.png","Love Story","Taylor Swift"]
+        ]
+        const song = document.getElementById('song');
+        const songNum = document.getElementById('songNum');
+        const image = document.getElementById('image');
+        const songName = document.getElementById('songName');
+        const songBy = document.getElementById('songBy');
+        const totalSongs = document.getElementById('totalSongs');
+        const timer = document.getElementById('timer');
+        const forward = document.getElementById('forward');
+        const backward = document.getElementById('backward');
+        const playPause = document.getElementById('play');
+        const pmin = document.getElementById('pmin');
+        const psec = document.getElementById('psec');
+        const tmin = document.getElementById('tmin');
+        const tsec = document.getElementById('tsec');
+        const soundSetter = document.getElementById('soundSetter');
+        const decrease = document.getElementById('decrease');
+        const increase = document.getElementById('increase');
+        const replay = document.getElementById('replay');
+        const shuffle = document.getElementById('shuffle');
+        let songNo = 0;
+        songNum.innerText = songNo+1;
+        image.style.backgroundImage = `url(${songs[songNo][1]})`;
+        songName.innerText = songs[songNo][2];
+        songBy.innerText = songs[songNo][3];
+        totalSongs.innerText = songs.length;
+        song.setAttribute("src",songs[songNo][0]);
+        song.onloadedmetadata = ()=>{
+            song.volume = soundSetter.value/10;
+            tmin.innerText = (String(Math.floor(song.duration/60)).length)<2?'0'+String(Math.floor(song.duration/60)):Math.floor(song.duration/60);
+            tsec.innerText = (String(Math.floor(song.duration%60)).length)<2?'0'+String(Math.floor(song.duration%60)):Math.floor(song.duration%60);
+        }
+        let timeSetter;
+        function changeRangeInput() {
+            const t = song.currentTime;
+            timer.value = (t/song.duration)*10000;
+            let mins = Math.floor(t/60);
+            if (String(mins).length<2){
+                mins = '0'+mins;
+            }
+            let secs = Math.floor(t%60);
+            if (String(secs).length<2){
+                secs = '0'+secs;
+            }
+            pmin.innerText = mins;
+            psec.innerText = secs; 
+            if (t==song.duration){
+                clearInterval(timeSetter);
+            }
+        }
+        decrease.onclick = ()=>{
+            if (soundSetter.value>0){
+                soundSetter.value--;
+                song.volume = soundSetter.value/10;
+            }
+        }
+        increase.onclick = ()=>{
+            if (soundSetter.value < Number(soundSetter.getAttribute('max'))){
+                soundSetter.value++;
+                song.volume = soundSetter.value/10;
+            }
+        }
+        let boolean = true;
+        playPause.onclick = function(){
+            this.classList.toggle('bi-pause-circle-fill');
+            this.classList.toggle('bi-play-circle-fill');
+            if (boolean){
+                song.play();
+                timeSetter = setInterval(changeRangeInput,1);
+                boolean = false;
+            }else{
+                song.pause();
+                clearInterval(timeSetter);
+                boolean = true;
+            }
+        }
+        forward.onclick = ()=>{
+            if ((song.duration-song.currentTime)>=10){
+                song.currentTime+=10;
+            }else{
+                song.currentTime = song.duration;
+            }
+            timer.value=(song.currentTime/song.duration)*10000;
+        }
+        backward.ondblclick = ()=>{
+            songNo--;
+            if (songNo==-1){
+                songNo = songs.length-1;
+            }
+            songNum.innerText = songNo+1;
+            image.style.backgroundImage = `url(${songs[songNo][1]})`;
+            songName.innerText = songs[songNo][2];
+            songBy.innerText = songs[songNo][3];
+            song.setAttribute("src",songs[songNo][0]);
+            song.currentTime = 0;
+            play.setAttribute('class','bi-play-circle-fill');
+            boolean=true;
+        }
+        shuffle.onclick = ()=>{
+            songNo = Math.floor(Math.random()*songs.length);
+            songNum.innerText = songNo+1;
+            image.style.backgroundImage = `url(${songs[songNo][1]})`;
+            songName.innerText = songs[songNo][2];
+            songBy.innerText = songs[songNo][3];
+            song.setAttribute("src",songs[songNo][0]);
+            song.currentTime = 0;
+            play.setAttribute('class','bi-play-circle-fill');
+            boolean=true;
+            play.click();
+        }
+        forward.ondblclick = ()=>{
+            songNo++;
+            if (songNo==songs.length){
+                songNo = 0;
+            }
+            songNum.innerText = songNo+1;
+            image.style.backgroundImage = `url(${songs[songNo][1]})`;
+            songName.innerText = songs[songNo][2];
+            songBy.innerText = songs[songNo][3];
+            song.setAttribute("src",songs[songNo][0]);
+            song.currentTime = 0;
+            play.setAttribute('class','bi-play-circle-fill');
+            boolean=true;
+            play.click();
+        }
+        backward.onclick = ()=>{
+            if (song.currentTime>=10){
+                song.currentTime-=10;
+            }else{
+                song.currentTime = 0;
+            }
+            timer.value=(song.currentTime/song.duration)*10000;
+        }
+        timer.oninput = ()=>{
+            clearInterval(timeSetter);
+            let s = timer.value;
+            let t = (song.duration*s)/10000;
+            song.currentTime = t;
+        }
+        timer.onchange = ()=>{
+            timeSetter = setInterval(changeRangeInput,1);
+        }
+        soundSetter.oninput = ()=>{
+            song.volume = soundSetter.value/10;
+        }
+        replay.onclick = ()=>{
+            song.currentTime = 0;
+            timeSetter.value = 0;
+        }
+    </script>
+    </script>
+</body>
+</html>
